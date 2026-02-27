@@ -5,6 +5,8 @@ import static org.apache.commons.lang3.builder.ToStringStyle.NO_CLASS_NAME_STYLE
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import java.io.Serializable;
+
 /**
  * A class representing the successful match between a base author and an enriching author.
  *
@@ -17,11 +19,15 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  * @param <EA> The type representing the enriching author. This class contains relevant data
  *             about author who is potential match for the base author.
  */
-public class AuthorMatch<BA, EA> {
+public class AuthorMatch<BA, EA>  implements Serializable {
 	private BA baseAuthor; // The base author
 	private EA enrichingAuthor; // The enriching author
 	private String stepName; // The step name associated with the match
 	private double confidence; // Confidence score of the match
+
+	public AuthorMatch() {
+
+	}
 
 	/**
 	 * Constructs an AuthorMatch object with specified base author, enriching author, step name, and confidence score.

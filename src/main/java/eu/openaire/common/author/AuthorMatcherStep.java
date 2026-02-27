@@ -3,6 +3,7 @@ package eu.openaire.common.author;
 
 import static eu.openaire.common.author.AuthorMatchers.matchOrderedTokenAndAbbreviations;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -21,10 +22,14 @@ import java.util.function.Predicate;
  * @param <BA> The type containing the base author data.
  * @param <EA> The type containing the enriching author data.
  */
-public class AuthorMatcherStep<BA, EA> {
+public class AuthorMatcherStep<BA, EA> implements Serializable {
 	private final BiFunction<BA, EA, Optional<AuthorMatch<BA, EA>>> matchingFunc;
 	private final Predicate<List<AuthorMatch<BA, EA>>> exclusionPredicate;
 	private final String name;
+
+	public AuthorMatcherStep() {
+		this(null, null, null);
+	}
 
 	private AuthorMatcherStep(BiFunction<BA, EA, Optional<AuthorMatch<BA, EA>>> matchingFunc,
 		Predicate<List<AuthorMatch<BA, EA>>> exclusionPredicate, String name) {
