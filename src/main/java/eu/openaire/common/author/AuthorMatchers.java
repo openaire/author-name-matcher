@@ -119,10 +119,10 @@ public class AuthorMatchers {
 		List<BA> unmatched_base_authors,
 		List<EA> unmatched_enriching_authors,
 		AuthorMatcherStep<BA, EA> step) {
-		List<AuthorMatch<BA, EA>> matches = new ArrayList<>();
+		List<AuthorMatch<BA, EA>> matches = new ArrayList<>(unmatched_enriching_authors.size());
 
 		if (unmatched_base_authors.isEmpty()) {
-			return new ArrayList<>();
+			return Collections.emptyList();
 		}
 
 		for (EA enriching_author : unmatched_enriching_authors) {
@@ -142,18 +142,74 @@ public class AuthorMatchers {
 			}
 		}
 
-		Set<BA> matched_base_authors = new HashSet<>();
-		Set<EA> matched_enrichment_authors = new HashSet<>();
-		List<AuthorMatch<BA, EA>> results = new ArrayList<>();
-		for (AuthorMatch<BA, EA> m : matches
-			.stream()
-			.sorted(Collections.reverseOrder(Comparator.comparingDouble(AuthorMatch::getConfidence)))
-			.collect(Collectors.toList())) {
+		if (matches.isEmpty()) {
+			return Collections.emptyList();
+		}
 
+		Set<BA> matched_base_authors = Collections.newSetFromMap(
+                new IdentityHashMap<>());
+		Set<EA> matched_enrichment_authors = Collections.newSetFromMap(
+                new IdentityHashMap<>());
+		List<AuthorMatch<BA, EA>> results = new ArrayList<>(
+			Math.min(unmatched_base_authors.size(), unmatched_enriching_authors.size()));
+
+		List<AuthorMatch<BA, EA>> sorted_matches = matches
+				.stream()
+				.sorted(Collections.reverseOrder(Comparator.comparingDouble(AuthorMatch::getConfidence)))
+				.collect(Collectors.toList());
+
+		Map<BA, List<AuthorMatch<BA, EA>>> bestByBaseAuthor = new IdentityHashMap<>();
+		Map<EA, List<AuthorMatch<BA, EA>>> bestByEnrichingAuthor = new IdentityHashMap<>();
+
+		for (AuthorMatch<BA, EA> m : sorted_matches) {
+			bestByBaseAuthor.compute(m.getBaseAuthor(), (k, v) -> {
+				if (v == null) {
+					v = new ArrayList<>();
+				}
+				if (v.isEmpty() || v.get(0).getConfidence() == m.getConfidence()) {
+					v.add(m);
+					bestByEnrichingAuthor.compute(m.getEnrichingAuthor(), (ea, lv) -> {
+						if (lv == null) {
+							lv = new ArrayList<>();
+						}
+						lv.add(m);
+						return lv;
+					});
+				}
+				return v;
+			});
+
+		}
+
+		for (AuthorMatch<BA, EA> m : sorted_matches) {
 			if (!matched_base_authors.contains(m.getBaseAuthor())
 				&& !matched_enrichment_authors.contains(m.getEnrichingAuthor())) {
+
+				List<AuthorMatch<BA, EA>> baseAuthorBestMatches = bestByBaseAuthor.get(m.getBaseAuthor());
+
+				// detect ambiguity: more candidate enriching authors than matched authors:
+				// do not resolve them
+				if (baseAuthorBestMatches.size() > 1) {
+					List<EA> enrichingAuthors = baseAuthorBestMatches.stream()
+						.map(AuthorMatch::getEnrichingAuthor)
+						.collect(Collectors.toList());
+
+					IdentityHashMap<BA,BA> baseAuthorsFromEnriching = new IdentityHashMap<>();
+					enrichingAuthors.stream()
+						.flatMap(ea -> bestByEnrichingAuthor.get(ea).stream())
+						.map(AuthorMatch::getBaseAuthor)
+							.forEach(baseAuthor -> baseAuthorsFromEnriching.put(baseAuthor, baseAuthor));
+
+					if (enrichingAuthors.size() > baseAuthorsFromEnriching.size()) {
+						matched_base_authors.addAll(baseAuthorsFromEnriching.keySet());
+						matched_enrichment_authors.addAll(enrichingAuthors);
+						continue;
+					}
+				}
+
 				matched_base_authors.add(m.getBaseAuthor());
 				matched_enrichment_authors.add(m.getEnrichingAuthor());
+
 				results.add(m);
 			}
 		}
