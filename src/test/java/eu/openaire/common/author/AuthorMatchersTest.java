@@ -49,9 +49,8 @@ public class AuthorMatchersTest {
 
         List<AuthorMatch<TestAuthor, TestORCIDAuthor>> result = getMatches(authors, candidates);
 
-        Assertions.assertEquals(2, result.size());
-        Assertions.assertTrue(checkMatch(result, "Otto, Philipp", "0000-0001-8630-108X"));
-        Assertions.assertTrue(checkMatch(result, "Otto, P.", "0000-0002-9796-6682"));
+        // the two candidates are indistinguishable: matching either of them would be arbitrary
+        Assertions.assertEquals(0, result.size());
     }
 
     @Test
@@ -147,19 +146,19 @@ public class AuthorMatchersTest {
                                 Arrays
                                         .asList(
                                                 AuthorMatcherStep
-                                                        .stringIgnoreCaseMatcher(TestAuthor::getFullName, TestORCIDAuthor::getFullName)
+                                                        .stringIgnoreCaseMatcher((TestAuthor a) -> AuthorNames.normalize(a.getFullName()), (TestORCIDAuthor o) -> AuthorNames.normalize(o.getFullName()))
                                                         .name("fullName")
                                                         .build(),
                                                 AuthorMatcherStep
-                                                        .stringIgnoreCaseMatcher(TestAuthor::getFullName, TestORCIDAuthor::getInvertedFullName)
+                                                        .stringIgnoreCaseMatcher((TestAuthor a) -> AuthorNames.normalize(a.getFullName()), (TestORCIDAuthor o) -> AuthorNames.normalize(o.getInvertedFullName()))
                                                         .name("invertedFullName")
                                                         .build(),
                                                 AuthorMatcherStep
-                                                        .abbreviationsMatcher(TestAuthor::getFullName, TestORCIDAuthor::getFullName)
+                                                        .abbreviationsMatcher((TestAuthor a) -> AuthorNames.normalize(a.getFullName()), (TestORCIDAuthor o) -> AuthorNames.normalize(o.getFullName()))
                                                         .name("orderedTokens")
                                                         .build(),
                                                 AuthorMatcherStep
-                                                        .stringIgnoreCaseMatcher(TestAuthor::getFullName, TestORCIDAuthor::getCreditName)
+                                                        .stringIgnoreCaseMatcher((TestAuthor a) -> AuthorNames.normalize(a.getFullName()), (TestORCIDAuthor o) -> AuthorNames.normalize(o.getCreditName()))
                                                         .name("creditName")
                                                         .build()));
         for (AuthorMatch<TestAuthor, TestORCIDAuthor> match : result) {

@@ -2,13 +2,7 @@
 package eu.openaire.common.author;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * Utility class for comparing author names using token-based matching and abbreviation handling.
@@ -18,14 +12,6 @@ import org.apache.commons.lang3.StringUtils;
  * of the full name might be reordered or abbreviated.</p>
  */
 public class OrderedTokenAndAbbreviationsMatcher {
-	/**
-	 * Regular expression pattern used to split names into tokens.
-	 *
-	 * <p>The pattern matches spaces, punctuation symbols, and dashes, ensuring
-	 * that names are split into meaningful components.</p>
-	 */
-	static public final Pattern SPLIT_REGEX = Pattern.compile("[\\s\\p{Punct}\\p{Pd}]+");
-
 	/**
 	 * Maximum allowed difference in the number of tokens between two names for them to be comparable.
 	 */
@@ -38,11 +24,9 @@ public class OrderedTokenAndAbbreviationsMatcher {
 	 * @return A sorted list of lowercase tokens derived from the input string.
 	 */
 	static private List<String> tokenize(String s) {
-		return Stream
-			.of(SPLIT_REGEX.split(StringUtils.stripAccents(s).toLowerCase(Locale.ROOT)))
-			.filter(x -> !x.isEmpty())
-			.sorted()
-			.collect(Collectors.toList());
+		List<String> res = AuthorNames.split(s);
+		res.sort(String::compareTo);
+		return res;
 	}
 
 	/**
